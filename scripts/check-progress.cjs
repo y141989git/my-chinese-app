@@ -1,0 +1,24 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const app=fs.readFileSync('public/app.js','utf8');
+const c=vm.createContext({console,Promise,Set,Map,JSON,Math,Date,crypto:require('node:crypto').webcrypto});
+vm.runInContext(app.slice(0,app.indexOf('let sourcesLoading')),c);
+vm.runInContext(app.slice(app.indexOf('let wordObserver=null')),c);
+vm.runInContext(`persist=()=>true;corpus={clean:[{id:'a',zh:'阀门',py:'fámén',ru:'Клапан',tags:['Трубопроводы и арматура'],state:'Новое',sources:[],examples:[]},{id:'b',zh:'安装',py:'ānzhuāng',ru:'Монтаж',tags:['Монтаж оборудования'],state:'Новое',sources:[],examples:[]}]};rebuild();`,c);
+assert.equal(vm.runInContext('dashboardStats().seen',c),0);
+vm.runInContext(`markViewed('a');markViewed('a');`,c);
+assert.equal(vm.runInContext('dashboardStats().seen',c),1);
+vm.runInContext(`update({...data.find(x=>x.id==='a'),state:'Изучено',memoryAt:Date.now()});rebuild();`,c);
+assert.equal(vm.runInContext('dashboardStats().remembered',c),1);
+assert.ok(vm.runInContext(`data.find(x=>x.id==='a').viewedAt>0`,c));
+vm.runInContext(`const snapshot=JSON.parse(JSON.stringify(payload()));edits=snapshot.edits;rebuild();`,c);
+assert.equal(vm.runInContext('dashboardStats().seen',c),1);
+assert.equal(vm.runInContext('dashboardStats().remembered',c),1);
+vm.runInContext(`update({...data.find(x=>x.id==='a'),state:'Повторить'});rebuild()`,c);
+assert.equal(vm.runInContext('dashboardStats().remembered',c),0);
+assert.equal(vm.runInContext('dashboardStats().repeat',c),1);
+assert.equal(vm.runInContext('dashboardStats().seen',c),1);
+assert.ok(vm.runInContext(`dashboardHTML().includes('Мой прогресс')`,c));
+const db=JSON.parse(fs.readFileSync('public/source.json','utf8'));
+for(const z of db.tableRefresh.newTerms){const d=db.clean.find(x=>x.zh===z);assert.ok(d?.examples.length,z+' lacks example');}
+assert.equal(new Set(db.clean.map(d=>d.id)).size,db.clean.length);
+console.log('Passed: unique views, current remembered count, repeat transition, state restoration, refreshed terms with examples, unique IDs.');
