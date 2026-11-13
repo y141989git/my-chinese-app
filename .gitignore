@@ -43,7 +43,3 @@ yarn-error.log*
 
 # OS metadata
 .DS_Store
-
-# Personal standalone progress
-/.local-data/
-/backups/
