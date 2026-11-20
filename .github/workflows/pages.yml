@@ -1,0 +1,56 @@
+name: Publish Chinese trainer
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare static website
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root = Path('public')
+          prefix = '/my-chinese-app/'
+          assets = ('manifest.webmanifest','icon-192.png','icon-512.png','vendor/','hanzi/','source.json','raw.json','app.js','business.js','lesson-notes.js','cloud.js')
+          for path in root.rglob('*'):
+              if path.suffix not in ('.html','.js','.css','.webmanifest'):
+                  continue
+              s = path.read_text(encoding='utf-8')
+              for asset in assets:
+                  s = s.replace('"/' + asset, '"' + prefix + asset).replace("'/" + asset, "'" + prefix + asset)
+              path.write_text(s, encoding='utf-8')
+          # GitHub Pages has no /api/sync. Keep progress in the browser.
+          (root / 'cloud.js').write_text("""(function(){
+          const localStatus='Локально на этом устройстве · делай экспорт JSON';
+          window.ChineseCloud={
+            async start(local){return local;},
+            schedule(){},
+            async sync(){},
+            getStatus(){return localStatus;},
+            isOnline(){return false;},
+            refreshStatus(){document.querySelectorAll('[data-sync-status]').forEach(el=>el.textContent=localStatus);}
+          };
+          })();""",encoding='utf-8')
+          (root / '.nojekyll').touch()
+          PY
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+      - id: deployment
+        uses: actions/deploy-pages@v4
