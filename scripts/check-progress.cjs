@@ -1,9 +1,9 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const app=fs.readFileSync('public/app.js','utf8');
-const c=vm.createContext({console,Promise,Set,Map,JSON,Math,Date,crypto:require('node:crypto').webcrypto});
+const c=vm.createContext({console,Promise,Set,Map,JSON,Math,Date,document:{addEventListener(){},querySelector:()=>null},window:{addEventListener(){},DailyListening:{done:()=>false}},localStorage:{getItem:()=>null},crypto:require('node:crypto').webcrypto});
 vm.runInContext(app.slice(0,app.indexOf('let sourcesLoading')),c);
-vm.runInContext(app.slice(app.indexOf('let wordObserver=null')),c);
-vm.runInContext(`persist=()=>true;corpus={clean:[{id:'a',zh:'阀门',py:'fámén',ru:'Клапан',tags:['Трубопроводы и арматура'],state:'Новое',sources:[],examples:[]},{id:'b',zh:'安装',py:'ānzhuāng',ru:'Монтаж',tags:['Монтаж оборудования'],state:'Новое',sources:[],examples:[]}]};rebuild();`,c);
+vm.runInContext(app.slice(app.indexOf('let wordObserver=null'),app.indexOf('const headerQuotes=')),c);
+vm.runInContext(`let writingRecords=new Map();persist=()=>true;corpus={clean:[{id:'a',zh:'阀门',py:'fámén',ru:'Клапан',tags:['Трубопроводы и арматура'],state:'Новое',sources:[],examples:[]},{id:'b',zh:'安装',py:'ānzhuāng',ru:'Монтаж',tags:['Монтаж оборудования'],state:'Новое',sources:[],examples:[]}]};rebuild();`,c);
 assert.equal(vm.runInContext('dashboardStats().seen',c),0);
 vm.runInContext(`markViewed('a');markViewed('a');`,c);
 assert.equal(vm.runInContext('dashboardStats().seen',c),1);

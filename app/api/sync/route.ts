@@ -19,7 +19,7 @@ export async function POST(request:Request){
  let body;try{const text=await request.text();if(text.length>2000000)return json({error:'too_large'},413);body=JSON.parse(text)}catch{return json({error:'invalid_json'},400)}
  if(!Array.isArray(body.items)||body.items.length>100)return json({error:'invalid_items'},400);
  const items=body.items;
- if(!items.every((x:any)=>x&&typeof x.key==='string'&&/^[edcrhw]:/.test(x.key)&&x.key.length<300&&Number.isSafeInteger(x.stamp)&&x.stamp>0&&x.stamp<=Date.now()+300000&&x.value!==undefined&&JSON.stringify(x.value).length<1000000))return json({error:'invalid_record'},400);
+ if(!items.every((x:any)=>x&&typeof x.key==='string'&&/^[edcrhwtav]:/.test(x.key)&&x.key.length<300&&Number.isSafeInteger(x.stamp)&&x.stamp>0&&x.stamp<=Date.now()+300000&&x.value!==undefined&&JSON.stringify(x.value).length<1000000))return json({error:'invalid_record'},400);
  if(items.length)await env.DB.batch(items.map((x:any)=>env.DB.prepare('INSERT INTO learning_records (user_id, record_key, value, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(user_id, record_key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at WHERE excluded.updated_at > learning_records.updated_at').bind(id,x.key,JSON.stringify(x.value),x.stamp)));
  return json({ok:true,saved:items.length});
 }
