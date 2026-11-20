@@ -28,7 +28,7 @@ jobs:
           prefix = '/my-chinese-app/'
           assets = tuple(p.name + ('/' if p.is_dir() else '') for p in root.iterdir())
           for path in root.rglob('*'):
-              if path.suffix not in ('.html','.js','.css','.webmanifest'):
+              if path.suffix not in ('.html','.js','.css','.webmanifest','.json'):
                   continue
               s = path.read_text(encoding='utf-8')
               for asset in assets:
